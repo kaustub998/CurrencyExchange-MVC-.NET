@@ -1,0 +1,108 @@
+﻿@{
+    ViewData["Title"] = "Register User";
+}
+
+@using currencyExchange.Models;
+@model currencyExchange.Models.UserRegister
+
+<style>
+    .form-container {
+        height: calc(100vh - 3.5rem);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .form-box {
+        width: 550px; /* Increased width to accommodate two columns */
+        padding: 30px;
+        background-color: #ffd;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .custom-checkbox {
+        width: 20px;
+        height: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    .btn-link {
+        color: #666;
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+
+</style>
+
+<h1>User Register</h1>
+
+<form asp-action="Register" method="post" class="form-container">
+    <div class="form-box">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="FirstName"></label>
+                    <input asp-for="FirstName" class="form-control" placeholder="Enter first name" />
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="LastName"></label>
+                    <input asp-for="LastName" class="form-control" placeholder="Enter last name" />
+                    <span asp-validation-for="LastName" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" placeholder="Enter email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="Enter password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <div class="form-group">
+                <label asp-for="IsAdmin">Is Admin</label>
+                <input asp-for="IsAdmin" type="checkbox" />
+                <span asp-validation-for="IsAdmin" class="text-danger"></span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Register</button>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
