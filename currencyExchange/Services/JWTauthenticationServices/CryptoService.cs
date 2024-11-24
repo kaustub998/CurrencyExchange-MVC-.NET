@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Runtime.Intrinsics.Arm;
 
-namespace currencyExchange.Services
+namespace currencyExchange.Services.JWTauthenticationServices
 {
     public class CryptoService
     {

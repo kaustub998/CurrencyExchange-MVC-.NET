@@ -1,5 +1,45 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@using Radzen.Blazor
+
+@model List<currencyExchange.Models.ForexRate>
+
+<div class="container mt-5">
+    @if (Model == null || !Model.Any())
+    {
+        <p>No data available</p>
+    }
+    else
+    {
+        
+        <div class="container mt-5">
+            @if (Model == null || !Model.Any())
+            {
+                <p>No data available</p>
+            }
+            else
+            {
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Currency</th>
+                            <th>ISO Code</th>
+                            <th>Buy Rate</th>
+                            <th>Sell Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var rate in Model)
+                        {
+                            <tr>
+                                <td>@rate.Currency?.Name</td>
+                                <td>@rate.Currency?.Iso3</td>
+                                <td>@rate.Buy</td>
+                                <td>@rate.Sell</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    }
+</div>
+

@@ -1,6 +1,6 @@
 ﻿using currencyExchange.Models;
 
-namespace currencyExchange.Services
+namespace currencyExchange.Services.UserRegistrationService
 {
     public interface IUserRegistrationLoginService
     {

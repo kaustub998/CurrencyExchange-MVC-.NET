@@ -1,39 +1,33 @@
 using currencyExchange.Models;
-using currencyExchange.Services;
 using currencyExchange.Services.UserService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using currencyExchange.Services.ForexService;
+using currencyExchange.Services.UserRegistrationService;
+using currencyExchange.Services.JWTauthenticationServices;
+using currencyExchange.Services.BankAccountService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-   .AddJwtBearer(options =>
-   {
-       options.TokenValidationParameters = new TokenValidationParameters
-       {
-           ValidateIssuerSigningKey = true,
-           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:WebTokenSecret").Value)),
-           ValidateIssuer = false,
-           ValidateAudience = false,
-           ValidateLifetime = true, // Expire after a certain period
-           ClockSkew = TimeSpan.Zero
-       };
-   });
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddSingleton<JWTService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IForexService, ForexService>();
+builder.Services.AddScoped<IBankAccountService, BankAccountService>();
+
+builder.Services.AddHttpClient<ForexService>(client =>
+{
+    client.BaseAddress = new Uri("https://www.nrb.org.np/");
+});
+
 builder.Services.AddScoped<IUserRegistrationLoginService, UserRegistrationLoginService>();
 
 var app = builder.Build();
@@ -51,8 +45,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",

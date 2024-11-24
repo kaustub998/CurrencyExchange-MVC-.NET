@@ -1,10 +1,11 @@
 ﻿using currencyExchange.Models;
-using currencyExchange.Services;
+using currencyExchange.Services.UserRegistrationService;
 using Microsoft.AspNetCore.Mvc;
+using XAct;
 
 namespace currencyExchange.Controllers
 {
-    public class UserRegistrationLoginController : Controller
+    public class UserRegistrationLoginController : BaseController
     {
         private readonly IUserRegistrationLoginService _userRegistrationLoginService;
 
@@ -16,13 +17,15 @@ namespace currencyExchange.Controllers
         [HttpGet]
         public IActionResult RegisterUser()
         {
-            return View();
+            bool isLoggedIn = HttpContext.Request.Cookies.ContainsKey("JWToken");
+            return isLoggedIn? RedirectToAction("LiveCurrencyUpdate", "CurrencyRates") : View();
         }
 
         [HttpGet]
         public IActionResult LoginUser()
         {
-            return View();
+            bool isLoggedIn = HttpContext.Request.Cookies.ContainsKey("JWToken");
+            return isLoggedIn ? RedirectToAction("LiveCurrencyUpdate", "CurrencyRates") : View();
         }
 
         [HttpPost]
@@ -50,12 +53,19 @@ namespace currencyExchange.Controllers
                 if (response.message == null)
                 {
                     HttpContext.Response.Cookies.Append("JWToken", response.tokenId, new CookieOptions { HttpOnly = true, Expires = DateTime.UtcNow.AddHours(1) });
+                    ViewData["isLoggedIn"] = true;
                     return RedirectToAction("LiveCurrencyUpdate", "CurrencyRates");
                 }
                 ModelState.AddModelError("", response.message);
             }
 
             return View();
+        }
+
+        public IActionResult Logout()
+        {
+            HttpContext.Response.Cookies.Delete("JWToken");
+            return RedirectToAction("LoginUser", "UserRegistrationLogin");
         }
     }
 }
