@@ -2,7 +2,6 @@
     ViewData["Title"] = "Account Statement";
 }
 
-@using currencyExchange.Models;
 @model currencyExchange.Models.AccountStatement
 
 <h2>Account Statement for Account: @Model.AccountName - @Model.AccountNumber</h2>
@@ -25,6 +24,7 @@ else
                 <th>New Balance</th>
                 <th>Transaction Type</th>
                 <th>Remarks</th>
+                <th>Detail</th>
             </tr>
         </thead>
         <tbody>
@@ -39,8 +39,51 @@ else
                         @(transaction.Credited ? "Credited" : "Debited")
                     </td>
                     <td>@transaction.Remarks</td>
+                    <td>
+                        @if(transaction.IsForeignTransaction)
+                        {
+                            <form method="get" action="/BankAccounts/TransactionDetail">
+                                <input type="hidden" name="transactionId" value="@transaction.TransactionDetail.TransactionId" />
+                                <input type="hidden" name="accountId" value="@Model.AccountId" />
+                                <input type="hidden" name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+                                <input type="hidden" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+                                <button type="submit" class="btn btn-success">View Detail</button>
+                            </form>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
+
+    @* view detaiil modal *@
+    @if (Model.SelectedTransaction != null)
+    {
+        <div class="modal show" style="display: block;" id="transactionDetailModal" tabindex="-1" aria-labelledby="transactionDetailModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="transactionDetailModalLabel">Transaction Detail</h5>
+                        <a href="/BankAccounts/AccountStatement?accountId=@Model.AccountId&fromDate=@Model.FromDate.ToString("yyyy-MM-dd")&toDate=@Model.ToDate.ToString("yyyy-MM-dd")" class="btn-close" aria-label="Close"></a>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Transaction ID:</strong> @Model.SelectedTransaction.TransactionId</p>
+                        <p><strong>Sender Account:</strong> @Model.SelectedTransaction.SenderAccount?.BankAccountUserName - @Model.SelectedTransaction.SenderAccount?.AccountNumber</p>
+                        <p><strong>Receiver Account:</strong> @Model.SelectedTransaction.ReceiverAccount?.BankAccountUserName - @Model.SelectedTransaction.ReceiverAccount?.AccountNumber</p>
+                        <p><strong>Sender Amount:</strong> @Model.SelectedTransaction.SenderAmount</p>
+                        <p><strong>Sender Currency:</strong> @Model.SelectedTransaction.SenderCurrency</p>
+                        <p><strong>Receiver Amount:</strong> @Model.SelectedTransaction.ReceiverAmount</p>
+                        <p><strong>Receiver Currency:</strong> @Model.SelectedTransaction.ReceiverCurrency</p>
+                        <p><strong>Exchange Rate:</strong> @Model.SelectedTransaction.ExchangeRate</p>
+                        <p><strong>Transaction Status:</strong> @Model.SelectedTransaction.TransactionStatus</p>
+                        <p><strong>Calculation Formula:</strong> @Model.SelectedTransaction.CalculationFormula</p>
+                        <p><strong>Remarks:</strong> @Model.SelectedTransaction.Remarks</p>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="/BankAccounts/AccountStatement?accountId=@Model.AccountId&fromDate=@Model.FromDate.ToString("yyyy-MM-dd")&toDate=@Model.ToDate.ToString("yyyy-MM-dd")" class="btn btn-secondary">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }

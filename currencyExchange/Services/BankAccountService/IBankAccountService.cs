@@ -14,5 +14,6 @@ namespace currencyExchange.Services.BankAccountService
         Task<bool> AddBalance(int accountId, decimal amount, string remarks);
         Task<bool> RemoveBalance(int accountId, decimal amount, string remarks);
         Task<AccountStatement> GetAccountStatement(int accountId, DateTime fromDate, DateTime toDate);
+        Task<Transaction> GetTransactionByIdAsync(int transactionId);
     }
 }

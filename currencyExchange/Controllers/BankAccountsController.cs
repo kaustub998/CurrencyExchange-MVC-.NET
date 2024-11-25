@@ -197,5 +197,24 @@ namespace currencyExchange.Controllers
             var accountStatement = await _bankAccountService.GetAccountStatement(accountId, fromDate, toDate);
             return View(accountStatement);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> TransactionDetail(int transactionId, int accountId, DateTime fromDate, DateTime toDate)
+        {
+            var selectedTransaction = await _bankAccountService.GetTransactionByIdAsync(transactionId);
+
+            if (selectedTransaction == null)
+            {
+                TempData["ErrorMessage"] = "Transaction not found.";
+                return RedirectToAction("AccountStatement", new { accountId, fromDate, toDate });
+            }
+
+            var accountStatement = await _bankAccountService.GetAccountStatement(accountId, fromDate, toDate);
+            accountStatement.SelectedTransaction = selectedTransaction;
+
+            return View("AccountStatement", accountStatement);
+        }
+
+
     }
 }

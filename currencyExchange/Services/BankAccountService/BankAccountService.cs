@@ -201,6 +201,7 @@ namespace currencyExchange.Services.BankAccountService
                     };
 
                     _context.TransactionDetails.Add(transactionDetails);
+                    await _context.SaveChangesAsync();
 
                     var transactionSummarySource = new TransactionSummary
                     {
@@ -211,7 +212,9 @@ namespace currencyExchange.Services.BankAccountService
                         TransactionDate = DateTime.UtcNow,
                         TransactionStatus = "Completed",
                         Remarks = Remarks,
-                        OldBalance = sourceOldBalance
+                        OldBalance = sourceOldBalance,
+                        IsForeignTransaction = true,
+                        TransactionDetailId = transactionDetails.TransactionId
                     };
 
                     _context.TransactionSummary.Add(transactionSummarySource);
@@ -225,7 +228,9 @@ namespace currencyExchange.Services.BankAccountService
                         TransactionDate = DateTime.UtcNow,
                         TransactionStatus = "Completed",
                         Remarks = Remarks,
-                        OldBalance = destinationOldBalance
+                        OldBalance = destinationOldBalance,
+                        IsForeignTransaction = true,
+                        TransactionDetailId = transactionDetails.TransactionId
                     };
 
                     _context.TransactionSummary.Add(transactionSummaryDestination);
@@ -238,7 +243,6 @@ namespace currencyExchange.Services.BankAccountService
                 throw;
             }
         }
-
 
         private async Task<decimal> ConvertCurrency(decimal amount, string sourceCurrency, string targetCurrency)
         {
@@ -322,12 +326,17 @@ namespace currencyExchange.Services.BankAccountService
                     AccountNumber = account.AccountNumber, 
                     FromDate = fromDate,
                     ToDate = toDate,
-                    Transactions = await _context.TransactionSummary.Where(item => item.AccountId == accountId && fromDate <= item.TransactionDate && item.TransactionDate <= toDate).ToListAsync()
+                    Transactions = await _context.TransactionSummary.Where(item => item.AccountId == accountId && fromDate <= item.TransactionDate && item.TransactionDate <= toDate).Include(item => item.TransactionDetail).ToListAsync()
                 };
                 return viewModel;
             }
             catch { }
             return new AccountStatement();
+        }
+
+        public async Task<Transaction> GetTransactionByIdAsync(int transactionId)
+        {
+            return await _context.TransactionDetails.Where(item => item.TransactionId == transactionId).Include(item => item.SenderAccount).Include(item => item.ReceiverAccount).FirstOrDefaultAsync() ?? new Transaction();
         }
     }
 }
