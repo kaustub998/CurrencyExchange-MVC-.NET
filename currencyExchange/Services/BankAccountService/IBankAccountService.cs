@@ -6,7 +6,13 @@ namespace currencyExchange.Services.BankAccountService
     {
         Task<List<BankAccount>> GetUserBankAccountsAsync(string userId);
         Task<List<string>> GetAvailableCurrencies();
-        Task CreateBankAccountAsync(BankAccount account);
+        Task<bool> CreateBankAccountAsync(BankAccount account);
         Task DeleteBankAccountAsync(int accountId);
+        Task<BankAccount?> ValidateDestinationAccountAsync(string bankAccountName, string bankAccountNumber);
+        Task<BankAccount?> CheckSourceAccount(int accountId);
+        Task<bool> PerformTransaction(int sourceAccountId, int destinationAccountId, decimal amount, string Remarks);
+        Task<bool> AddBalance(int accountId, decimal amount, string remarks);
+        Task<bool> RemoveBalance(int accountId, decimal amount, string remarks);
+        Task<AccountStatement> GetAccountStatement(int accountId, DateTime fromDate, DateTime toDate);
     }
 }

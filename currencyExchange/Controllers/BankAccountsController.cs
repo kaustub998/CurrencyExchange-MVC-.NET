@@ -3,6 +3,7 @@ using currencyExchange.Services;
 using currencyExchange.Services.BankAccountService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 using System.Security.Claims;
 using XAct.Users;
 
@@ -48,26 +49,24 @@ namespace currencyExchange.Controllers
 
             try
             {
+                ModelState.Clear();
                 if (ModelState.IsValid)
                 {
                     account.UserId = Convert.ToInt32(userId);
-                    await _bankAccountService.CreateBankAccountAsync(account);
-                    return RedirectToAction("AllBankAccounts"); 
+                    var check = await _bankAccountService.CreateBankAccountAsync(account);
+                    
+                    if(check)
+                        return RedirectToAction("AllBankAccounts");
+
+                    ModelState.AddModelError("", "Same Account Number already exists.");
                 }
             }
             catch (SqlException ex)
             {
-                if (ex.Number == 2627 || ex.Number == 2601)
-                {
-                    ModelState.AddModelError("DuplicateKey", "An account with this number already exists.");
-                }
-                else
-                {
-                    ModelState.AddModelError("Error", "An unexpected error occurred. Please try again later.");
-                }
+               
             }
 
-            var currencies = _bankAccountService.GetAvailableCurrencies();
+            var currencies = await _bankAccountService.GetAvailableCurrencies();
             ViewData["Currencies"] = currencies;
             return View(await _bankAccountService.GetUserBankAccountsAsync(userId));
         }
@@ -91,36 +90,112 @@ namespace currencyExchange.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMoneyStep1(SendMoneyModel model)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    var userId = JwtHelper.GetUserIdFromJwtCookie(HttpContext.Request.Cookies);
-            //    ViewData["SendMoneyModalOpen"] = true;
-            //    return View("AllBankAccounts", await _bankAccountService.GetUserBankAccountsAsync(userId));
-            //}
+            var userId = JwtHelper.GetUserIdFromJwtCookie(HttpContext.Request.Cookies);
 
-            //// Example validation logic
-            //var destinationAccount = await _bankAccountService.ValidateDestinationAccountAsync(
-            //    model.DestinationAccountName,
-            //    model.DestinationAccountNumber
-            //);
+            var currencies = await _bankAccountService.GetAvailableCurrencies();
+            ViewData["Currencies"] = currencies;
 
-            //if (destinationAccount == null)
-            //{
-            //    ModelState.AddModelError("", "Invalid destination account details.");
-            //    var userId = JwtHelper.GetUserIdFromJwtCookie(HttpContext.Request.Cookies);
-            //    ViewData["SendMoneyModalOpen"] = true;
-            //    return View("AllBankAccounts", await _bankAccountService.GetUserBankAccountsAsync(userId));
-            //}
+            if (!ModelState.IsValid)
+            {
+                ViewData["SendMoneyModal"] = true;
+                return View("AllBankAccounts", await _bankAccountService.GetUserBankAccountsAsync(userId));
+            }
 
-            ViewData["SendMoneyModalStep2Open"] = true;
-            //ViewData["SourceAccountId"] = model.SourceAccountId;
-            //ViewData["DestinationAccountId"] = destinationAccount.AccountId;
-
-            var userBankAccounts = await _bankAccountService.GetUserBankAccountsAsync(
-                JwtHelper.GetUserIdFromJwtCookie(HttpContext.Request.Cookies)
+            var destinationAccount = await _bankAccountService.ValidateDestinationAccountAsync(
+                model.DestinationAccountName,
+                model.DestinationAccountNumber
             );
 
+            if (destinationAccount == null)
+            {
+                ModelState.AddModelError("", "Invalid destination account details.");
+                ViewData["SendMoneyModal"] = true;
+                return View("AllBankAccounts", await _bankAccountService.GetUserBankAccountsAsync(userId));
+            }
+
+
+            var sourceAccount = await _bankAccountService.CheckSourceAccount(model.SourceAccountId);
+
+            if (sourceAccount == null)
+            {
+                ModelState.AddModelError("", "Invalid source account.");
+                ViewData["SendMoneyModal"] = true;
+                return View("AllBankAccounts", await _bankAccountService.GetUserBankAccountsAsync(userId));
+            }
+
+            if (sourceAccount.Balance < model.Amount)
+            {
+                ModelState.AddModelError("", "Insufficient balance.");
+                ViewData["SendMoneyModalOpen"] = true;
+                return View("AllBankAccounts", await _bankAccountService.GetUserBankAccountsAsync(userId));
+            }
+
+            var transactionSuccess = await _bankAccountService.PerformTransaction(sourceAccount.AccountId, destinationAccount.AccountId, model.Amount,model.Remarks);
+
+            if (!transactionSuccess)
+            {
+                TempData["ErrorMessage"] = "Transaction failed. Please check the account balances or currencies.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "Transaction completed successfully.";
+            }
+
+            var userBankAccounts = await _bankAccountService.GetUserBankAccountsAsync(userId);
             return View("AllBankAccounts", userBankAccounts);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddBalance(int accountId, decimal Amount,string Remarks)
+        {
+            var currencies = await _bankAccountService.GetAvailableCurrencies();
+            ViewData["Currencies"] = currencies;
+
+            var userId = JwtHelper.GetUserIdFromJwtCookie(HttpContext.Request.Cookies);
+
+            if (Amount <= 0)
+            {
+                TempData["ErrorMessage"] = "Amount should be greater than 0.";
+                return RedirectToAction("AllBankAccounts");
+            }
+
+            var check = await _bankAccountService.AddBalance(accountId, Amount,Remarks);
+
+            if (check)
+                return RedirectToAction("AllBankAccounts");
+            
+            ModelState.AddModelError("", "Some error occured.");
+            return RedirectToAction("AllBankAccounts");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveBalance(int accountId, decimal Amount, string Remarks)
+        {
+            var currencies = await _bankAccountService.GetAvailableCurrencies();
+            ViewData["Currencies"] = currencies;
+
+            var userId = JwtHelper.GetUserIdFromJwtCookie(HttpContext.Request.Cookies);
+
+            if (Amount <= 0)
+            {
+                TempData["ErrorMessage"] = "Amount should be greater than 0.";
+                return RedirectToAction("AllBankAccounts");
+            }
+
+            var check = await _bankAccountService.RemoveBalance(accountId, Amount, Remarks);
+
+            if (check)
+                return RedirectToAction("AllBankAccounts");
+
+            ModelState.AddModelError("", "Some error occured.");
+            return RedirectToAction("AllBankAccounts");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AccountStatement(int accountId, DateTime fromDate, DateTime toDate)
+        {
+            var accountStatement = await _bankAccountService.GetAccountStatement(accountId, fromDate, toDate);
+            return View(accountStatement);
         }
     }
 }

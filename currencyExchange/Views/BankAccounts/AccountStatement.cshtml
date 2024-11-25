@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "Account Statement";
+}
+
+@using currencyExchange.Models;
+@model currencyExchange.Models.AccountStatement
+
+<h2>Account Statement for Account: @Model.AccountName - @Model.AccountNumber</h2>
+
+<p>From: @Model.FromDate.ToString("yyyy-MM-dd")</p>
+<p>To: @Model.ToDate.ToString("yyyy-MM-dd")</p>
+
+@if (Model.Transactions == null || !Model.Transactions.Any())
+{
+    <p>No transactions available for the selected period.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Transaction Date</th>
+                <th>Old Balance</th>
+                <th>Transaction Amount</th>
+                <th>New Balance</th>
+                <th>Transaction Type</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in Model.Transactions)
+            {
+                <tr>
+                    <td>@transaction.TransactionDate.ToString("yyyy-MM-dd")</td>
+                    <td>@transaction.OldBalance</td>
+                    <td>@transaction.Amount</td>
+                    <td>@(transaction.Credited ? transaction.OldBalance + transaction.Amount : transaction.OldBalance - transaction.Amount)</td>
+                    <td>
+                        @(transaction.Credited ? "Credited" : "Debited")
+                    </td>
+                    <td>@transaction.Remarks</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

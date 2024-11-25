@@ -7,7 +7,8 @@ namespace currencyExchange.Models
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<User> Users { get; set; }
         public DbSet<BankAccount> BankAccounts { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Transaction> TransactionDetails { get; set; }
+        public DbSet<TransactionSummary> TransactionSummary { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -23,6 +24,9 @@ namespace currencyExchange.Models
                 entity.HasKey(k => k.TransactionId);
             });
 
+            modelBuilder.Entity<TransactionSummary>(entity => {
+                entity.HasKey(k => k.TransactionId);
+            });
 
             OnModelCreatingPartial(modelBuilder);
         }

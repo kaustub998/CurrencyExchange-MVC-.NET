@@ -14,6 +14,7 @@ namespace currencyExchange.Models
         public decimal Balance { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDeleted { get; set; }
+        public string? BankAccountUserName { get; set; }
         public virtual User? User { get; set; }
     }
 
@@ -32,6 +33,7 @@ namespace currencyExchange.Models
         [Required]
         [Range(1, double.MaxValue, ErrorMessage = "Amount must be greater than 0.")]
         public decimal Amount { get; set; }
+        public string Remarks { get; set; }
     }
 
 }
